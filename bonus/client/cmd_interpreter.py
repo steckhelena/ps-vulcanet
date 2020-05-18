@@ -31,9 +31,6 @@ class InteractiveCmd(cmd.Cmd):
         self.protocol = protocol
         self.got_protocol = True
 
-    def do_echo(self, arg):
-        print(arg)
-
     def do_call(self, arg):
         "call <id>\tmakes application receive a call whose id is <id >"
         if not self.got_protocol:
