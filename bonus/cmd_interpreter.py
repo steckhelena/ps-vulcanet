@@ -2,7 +2,7 @@ import readline
 import cmd
 import json
 
-from twisted.internet import reactor
+from twisted.internet import reactor, stdio
 from twisted.protocols import basic
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 
@@ -20,7 +20,7 @@ class CallcenterQueueClient(basic.LineReceiver):
 
 
 class InteractiveCmd(cmd.Cmd):
-    prompt = ""  # This is pretty
+    prompt = ""
 
     def __init__(self):
         super().__init__()
@@ -77,14 +77,24 @@ class InteractiveCmd(cmd.Cmd):
     help_EOF = help_exit
 
 
+class CommandParser(basic.LineReceiver):
+    delimiter = b'\n'
+
+    def __init__(self, cmd_interpreter: InteractiveCmd):
+        self.cmd_interpreter = cmd_interpreter
+
+    def lineReceived(self, line):
+        line = line.decode('ascii')
+        self.cmd_interpreter.onecmd(line)
+
+
 def main():
     cmd_in = InteractiveCmd()
 
     point = TCP4ClientEndpoint(reactor, "localhost", 5678)
     d = connectProtocol(point, CallcenterQueueClient())
     d.addCallback(cmd_in.gotProtocol)
-
-    reactor.callInThread(cmd_in.cmdloop)
+    stdio.StandardIO(CommandParser(cmd_in))
 
     reactor.run()
 
